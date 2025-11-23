@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Environment variables
+.env
+credentials.json
+token.json
+calendar_token.json
+
+# Data
+data/raw_emails/*
+data/attachments/*
+!data/raw_emails/.gitkeep
+!data/attachments/.gitkeep
+data/.upload_tracker.json
+data/.email_tracker.json
+data/.rag_cache.json
+data/.rag_metrics.json
+data/.rag_feedback.json
+data/.rag_learning.json
+data/.rag_prompt_history.json
+data/.last_check.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+

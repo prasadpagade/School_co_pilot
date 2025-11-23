@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: denali-school-copilot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: FILE_SEARCH_STORE_NAME
+        sync: false
+      - key: SCHOOL_DOMAINS
+        sync: false
+      - key: SCHOOL_SENDERS
+        sync: false
+      - key: EMAIL_INGESTION_TIME
+        value: 18:00
+      - key: CORS_ORIGINS
+        sync: false
+      - key: PYTHONUNBUFFERED
+        value: 1
+

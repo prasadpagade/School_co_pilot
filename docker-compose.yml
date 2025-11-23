@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - FILE_SEARCH_STORE_NAME=${FILE_SEARCH_STORE_NAME}
+      - SCHOOL_DOMAINS=${SCHOOL_DOMAINS}
+      - SCHOOL_SENDERS=${SCHOOL_SENDERS}
+      - EMAIL_INGESTION_TIME=${EMAIL_INGESTION_TIME:-18:00}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+    volumes:
+      - ./data:/app/data
+      - ./credentials.json:/app/credentials.json:ro
+      - ./calendar_token.json:/app/calendar_token.json
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
