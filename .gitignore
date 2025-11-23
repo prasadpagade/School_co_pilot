@@ -29,6 +29,9 @@ data/.rag_learning.json
 data/.rag_prompt_history.json
 data/.last_check.json
 
+# Screenshots (keep placeholder, ignore if empty)
+!docs/images/README.md
+
 # IDE
 .vscode/
 .idea/

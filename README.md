@@ -6,6 +6,12 @@ A personal assistant that organizes school-related communication by:
 3. Uploading all extracted files to Gemini File Search Store
 4. Allowing natural-language Q&A over the indexed documents
 
+## Screenshots
+
+![Denali School Copilot App](docs/images/app-screenshot.png)
+
+*Chat interface with mobile-responsive design*
+
 ## Setup
 
 1. **Install dependencies:**
