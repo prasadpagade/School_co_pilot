@@ -87,12 +87,48 @@ school-copilot/
 - ✅ Natural language Q&A via `/chat` endpoint
 - ✅ **Web UI** - Beautiful chat interface for testing
 
-## Next Steps (Future Versions)
+## Deployment
 
-- Telegram/WhatsApp bot for daily summaries
-- Weekly digest scheduler
-- Event/date extraction
-- Calendar UI
-- Teacher dashboard
-- Multi-child support
+### Quick Deploy Options
+
+**Render.com** (Recommended - Free tier available):
+- See `DEPLOY_RENDER.md` for step-by-step instructions
+- Free tier: 750 hours/month
+- Auto-deploys on git push
+
+**Railway.app** (Always-on option):
+- See `DEPLOY_RAILWAY.md` for step-by-step instructions
+- Free tier: $5 credit/month
+- No sleep mode
+
+### Environment Variables for Production
+
+```
+ENVIRONMENT=production
+GOOGLE_API_KEY=your_gemini_api_key
+FILE_SEARCH_STORE_NAME=your_store_name
+SCHOOL_DOMAINS=example.com
+SCHOOL_SENDERS=teacher@example.com
+EMAIL_INGESTION_TIME=18:00
+CORS_ORIGINS=https://your-app.onrender.com
+```
+
+## User Guide
+
+For end users (family members), see `USER_GUIDE.md` for instructions on how to use the app.
+
+## Features
+
+- ✅ Gmail ingestion for specific domains/senders
+- ✅ Extract and save email bodies as `.txt`
+- ✅ Extract and save attachments (PDFs, images, etc.)
+- ✅ Upload all files to Gemini File Search Store
+- ✅ Natural language Q&A via `/chat` endpoint
+- ✅ **Web UI** - Beautiful chat interface
+- ✅ **Mobile-responsive** - Works on phones, tablets, desktops
+- ✅ **Voice input** - Ask questions by voice
+- ✅ **Calendar integration** - Add events to Google Calendar
+- ✅ **Image upload** - Extract dates from conversation screenshots
+- ✅ **Email notifications** - Get notified about new emails
+- ✅ **Self-improvement metrics** - Track RAG performance
 
