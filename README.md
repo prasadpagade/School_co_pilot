@@ -8,9 +8,13 @@ A personal assistant that organizes school-related communication by:
 
 ## Screenshots
 
-![Denali School Copilot App](docs/images/app-screenshot.png)
+![Denali School Copilot App](docs/images/Screenshot%202025-11-22%20at%209.41.40%20PM.png)
 
 *Chat interface with mobile-responsive design*
+
+![Mobile View](docs/images/2481.jpg)
+
+*Mobile view of the app showing chat interface and tabs*
 
 ## Setup
 
