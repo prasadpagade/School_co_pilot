@@ -8,24 +8,17 @@ A personal assistant that organizes school-related communication by:
 
 ## Screenshots
 
-![Denali School Copilot - Chat Interface](docs/images/Screenshot%202025-11-22%20at%209.41.40%20PM.png)
+![Denali School Copilot - Chat Interface](https://raw.githubusercontent.com/prasadpagade/School_co_pilot/main/docs/images/Screenshot%202025-11-22%20at%209.41.40%20PM.png)
 
 *Main chat interface with mobile-responsive design and tabs*
 
-![Denali School Copilot - Features View](docs/images/Screenshot%202025-11-22%20at%209.41.13%20PM.png)
+![Denali School Copilot - Features View](https://raw.githubusercontent.com/prasadpagade/School_co_pilot/main/docs/images/Screenshot%202025-11-22%20at%209.41.13%20PM.png)
 
 *App showing calendar and schedule features*
 
-![Denali School Copilot - Mobile View](docs/images/2481.jpg)
+![Denali School Copilot - Mobile View](https://raw.githubusercontent.com/prasadpagade/School_co_pilot/main/docs/images/2481.jpg)
 
 *Mobile view of the app showing chat interface on iPhone*
-
----
-
-**Note:** If images don't display, view them directly:
-- [Chat Interface](docs/images/Screenshot%202025-11-22%20at%209.41.40%20PM.png)
-- [Features View](docs/images/Screenshot%202025-11-22%20at%209.41.13%20PM.png)
-- [Mobile View](docs/images/2481.jpg)
 
 ## Setup
 
