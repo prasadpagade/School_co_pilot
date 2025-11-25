@@ -20,6 +20,13 @@ A personal assistant that organizes school-related communication by:
 
 *Mobile view of the app showing chat interface on iPhone*
 
+---
+
+**Note:** If images don't display, view them directly:
+- [Chat Interface](docs/images/Screenshot%202025-11-22%20at%209.41.40%20PM.png)
+- [Features View](docs/images/Screenshot%202025-11-22%20at%209.41.13%20PM.png)
+- [Mobile View](docs/images/2481.jpg)
+
 ## Setup
 
 1. **Install dependencies:**
