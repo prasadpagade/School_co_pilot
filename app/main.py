@@ -1,4 +1,4 @@
-"""FastAPI application for Denali School Copilot."""
+"""FastAPI application for School Copilot."""
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
@@ -8,11 +8,26 @@ from pydantic import BaseModel
 from typing import Optional, List
 import os
 import tempfile
+import time
 from datetime import datetime
 import logging
-from functools import lru_cache
 
 from app.config import config
+
+# Initialize Sentry before anything else (captures startup errors too)
+if config.SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        sentry_sdk.init(
+            dsn=config.SENTRY_DSN,
+            environment=config.ENVIRONMENT,
+            traces_sample_rate=0.1,
+            integrations=[FastApiIntegration()],
+        )
+    except ImportError:
+        pass  # sentry-sdk not installed — skip silently
+
 from app.rag_chat import ask_school_question
 from app.calendar_client import CalendarClient
 from app.date_extractor import extract_dates_from_text
@@ -22,17 +37,16 @@ from app.notification_service import check_for_new_emails, get_notification_stat
 from app.rag_cache import get_cache_stats
 from app.voice_calendar import detect_calendar_intent, create_calendar_from_voice
 
-# Configure logging
 logging.basicConfig(
-    level=logging.INFO if os.getenv("ENVIRONMENT", "development") == "production" else logging.DEBUG,
+    level=logging.INFO if config.ENVIRONMENT == "production" else logging.DEBUG,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Denali School Copilot API",
-    description="API for querying school-related information using RAG",
-    version="0.1.0"
+    title=f"{config.APP_TITLE} API",
+    description="AI-powered school communication assistant for parents",
+    version="0.2.0"
 )
 
 # Add GZip compression for production
@@ -157,16 +171,12 @@ async def chat(request: ChatRequest):
         )
     
     try:
-        import time
         start_time = time.time()
         answer = ask_school_question(request.question, config.FILE_SEARCH_STORE_NAME)
         response_time = time.time() - start_time
-        
+
         logger.info(f"Chat query processed in {response_time:.3f}s")
-        
-        # Tracking is now done inside ask_school_question with quality scoring
-        # No need to track here to avoid double tracking
-        
+
         return ChatResponse(answer=answer)
     except Exception as e:
         error_msg = str(e)
@@ -660,22 +670,130 @@ async def get_recent_emails():
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize scheduled tasks on application startup."""
+    """Initialize database, auth routes, and scheduled tasks on startup."""
+    # Create DB tables
+    try:
+        from app.database import create_tables
+        create_tables()
+        logger.info("Database tables initialized")
+    except Exception as e:
+        logger.warning(f"Could not initialize database: {e}")
+
+    # Register auth + onboarding + billing routers
+    try:
+        from app.onboarding import router as onboarding_router
+        from app.billing import router as billing_router
+        app.include_router(onboarding_router)
+        app.include_router(billing_router)
+        logger.info("Onboarding + billing routes registered")
+    except Exception as e:
+        logger.warning(f"Could not register feature routes: {e}")
+
     # Parse ingestion time (format: HH:MM)
     try:
         time_parts = config.EMAIL_INGESTION_TIME.split(':')
         hour = int(time_parts[0])
         minute = int(time_parts[1]) if len(time_parts) > 1 else 0
         scheduler.schedule_daily_ingestion(hour=hour, minute=minute)
-        print(f"✅ Scheduled daily email ingestion at {config.EMAIL_INGESTION_TIME}")
+        logger.info(f"Scheduled daily email ingestion at {config.EMAIL_INGESTION_TIME}")
     except Exception as e:
-        print(f"⚠️  Could not schedule email ingestion: {e}")
-    
+        logger.warning(f"Could not schedule email ingestion: {e}")
+
     # Schedule periodic email checks (every 30 minutes)
     try:
         scheduler.schedule_periodic_checks(interval_minutes=30)
     except Exception as e:
-        print(f"⚠️  Could not schedule periodic email checks: {e}")
+        logger.warning(f"Could not schedule periodic email checks: {e}")
+
+    # Schedule weekly school digest email (Sunday 8am)
+    try:
+        scheduler.schedule_weekly_digest()
+    except Exception as e:
+        logger.warning(f"Could not schedule weekly digest: {e}")
+
+
+# ── Auth routes (Google OAuth2 login) ────────────────────────────────────────
+
+@app.get("/auth/login")
+async def auth_login():
+    """Redirect the user to Google's OAuth consent screen."""
+    from app.auth import get_google_oauth_url
+    try:
+        url = get_google_oauth_url()
+        return RedirectResponse(url=url)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/auth/callback")
+async def auth_callback(code: str, state: Optional[str] = None, db=None):
+    """
+    Handle the OAuth callback from Google.
+    Exchange the code for tokens, fetch the user profile, upsert in DB,
+    and set the session cookie.
+    """
+    from fastapi import Depends
+    from app.database import get_db, SessionLocal
+    from app.auth import exchange_code_for_tokens, get_google_user_info, create_session_response
+    from app.user_store import get_or_create_user
+
+    try:
+        token_data = exchange_code_for_tokens(code)
+        access_token = token_data.get("access_token")
+        user_info = get_google_user_info(access_token)
+    except Exception as e:
+        logger.error(f"OAuth callback error: {e}")
+        raise HTTPException(status_code=400, detail="OAuth authentication failed. Please try again.")
+
+    google_id = user_info.get("id")
+    email = user_info.get("email")
+    name = user_info.get("name", email)
+    picture = user_info.get("picture")
+
+    if not google_id or not email:
+        raise HTTPException(status_code=400, detail="Could not retrieve Google account info.")
+
+    with SessionLocal() as db_session:
+        user = get_or_create_user(db_session, google_id, email, name, picture)
+        logger.info(f"User logged in: {email}")
+
+    return create_session_response(user_id=google_id, email=email, redirect_url="/")
+
+
+@app.post("/auth/logout")
+async def auth_logout():
+    """Clear the session cookie."""
+    response = JSONResponse({"success": True, "message": "Logged out"})
+    response.delete_cookie("session_token")
+    return response
+
+
+@app.get("/auth/me")
+async def auth_me(request: Request):
+    """Return the current user's profile (or 401 if not logged in)."""
+    from app.auth import get_current_user_id_optional
+    from app.database import SessionLocal, User
+
+    user_id = get_current_user_id_optional(request)
+    if not user_id:
+        return JSONResponse({"authenticated": False}, status_code=200)
+
+    with SessionLocal() as db:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return JSONResponse({"authenticated": False}, status_code=200)
+
+    return {
+        "authenticated": True,
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "picture": user.picture,
+        "child_name": user.child_name,
+        "school_name": user.school_name,
+        "plan": user.plan,
+        "onboarding_complete": user.onboarding_complete,
+    }
 
 
 # Mount static files

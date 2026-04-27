@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="theme-color" content="#667eea">
-    <title>Denali School Copilot</title>
+    <title>School Copilot</title>
     <style>
         * {
             margin: 0;
@@ -730,13 +730,174 @@
             font-size: 11px;
             font-weight: 600;
         }
+        /* ── Login overlay ──────────────────────────────────── */
+        .auth-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .auth-overlay.visible { display: flex; }
+        .auth-card {
+            background: white;
+            border-radius: 20px;
+            padding: 48px 40px;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .auth-card h1 { font-size: 28px; color: #333; margin-bottom: 8px; }
+        .auth-card .tagline { color: #666; font-size: 15px; margin-bottom: 32px; line-height: 1.5; }
+        .auth-card .features { text-align: left; margin-bottom: 32px; }
+        .auth-card .feature-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; color: #555; font-size: 14px; }
+        .google-signin-btn {
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            background: white; border: 2px solid #ddd; border-radius: 12px;
+            padding: 14px 24px; width: 100%; cursor: pointer;
+            font-size: 16px; font-weight: 600; color: #333;
+            transition: all 0.2s; text-decoration: none;
+        }
+        .google-signin-btn:hover { border-color: #667eea; box-shadow: 0 4px 12px rgba(102,126,234,0.2); }
+        .google-signin-btn svg { width: 20px; height: 20px; }
+        .auth-card .footer-note { margin-top: 20px; font-size: 12px; color: #999; }
+
+        /* ── Onboarding wizard ──────────────────────────────── */
+        .onboarding-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 9000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .onboarding-overlay.visible { display: flex; }
+        .onboarding-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .onboarding-card h2 { font-size: 22px; color: #333; margin-bottom: 6px; }
+        .onboarding-card .step-desc { color: #666; font-size: 14px; margin-bottom: 24px; }
+        .step-progress { display: flex; gap: 6px; margin-bottom: 28px; }
+        .step-dot { flex: 1; height: 4px; border-radius: 2px; background: #eee; }
+        .step-dot.active { background: #667eea; }
+        .step-dot.done { background: #4caf50; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #444; margin-bottom: 6px; }
+        .form-group input {
+            width: 100%; padding: 12px 14px; border: 2px solid #e0e0e0;
+            border-radius: 10px; font-size: 14px; outline: none; transition: border-color 0.2s;
+        }
+        .form-group input:focus { border-color: #667eea; }
+        .form-group .hint { font-size: 12px; color: #888; margin-top: 4px; }
+        .onboarding-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; border: none; border-radius: 12px;
+            padding: 14px 28px; font-size: 15px; font-weight: 600;
+            cursor: pointer; width: 100%; transition: opacity 0.2s;
+        }
+        .onboarding-btn:hover { opacity: 0.9; }
+        .onboarding-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .skip-link { display: block; text-align: center; margin-top: 12px; color: #888; font-size: 13px; cursor: pointer; }
+        .skip-link:hover { color: #667eea; }
+
+        /* ── User badge in header ───────────────────────────── */
+        .user-badge {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            justify-content: center;
+        }
+        .user-badge.visible { display: flex; }
+        .user-avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+        .user-name { font-size: 13px; color: rgba(255,255,255,0.9); }
+        .logout-btn {
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+            color: white; font-size: 12px; padding: 3px 10px; border-radius: 20px;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .logout-btn:hover { background: rgba(255,255,255,0.35); }
     </style>
 </head>
 <body>
+    <!-- Login overlay -->
+    <div class="auth-overlay" id="authOverlay">
+        <div class="auth-card">
+            <h1>📘 School Copilot</h1>
+            <p class="tagline">Your AI assistant for school emails, events, and announcements — all in one place.</p>
+            <div class="features">
+                <div class="feature-item">✉️ Auto-reads school emails from Gmail</div>
+                <div class="feature-item">🤖 Answer any question about your child's school</div>
+                <div class="feature-item">📅 Adds school events to your Google Calendar</div>
+                <div class="feature-item">🔔 Alerts you when new school emails arrive</div>
+            </div>
+            <a href="/auth/login" class="google-signin-btn">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+            </a>
+            <p class="footer-note">We only read school emails (read-only Gmail access). Your data is private.</p>
+        </div>
+    </div>
+
+    <!-- Onboarding wizard overlay -->
+    <div class="onboarding-overlay" id="onboardingOverlay">
+        <div class="onboarding-card">
+            <div class="step-progress">
+                <div class="step-dot done" id="sdot1"></div>
+                <div class="step-dot active" id="sdot2"></div>
+                <div class="step-dot" id="sdot3"></div>
+            </div>
+            <h2>🏫 Set up your school</h2>
+            <p class="step-desc">Tell us which emails to watch — we'll scan your Gmail for school communications.</p>
+            <div class="form-group">
+                <label>Child's name</label>
+                <input type="text" id="ob_childName" placeholder="e.g. Emma" />
+            </div>
+            <div class="form-group">
+                <label>School name</label>
+                <input type="text" id="ob_schoolName" placeholder="e.g. Lincoln Elementary" />
+            </div>
+            <div class="form-group">
+                <label>School email domain(s)</label>
+                <input type="text" id="ob_domains" placeholder="@lincoln.edu, @pta.lincoln.edu" />
+                <div class="hint">Emails from these domains will be ingested automatically.</div>
+            </div>
+            <div class="form-group">
+                <label>Specific teacher / staff emails (optional)</label>
+                <input type="text" id="ob_senders" placeholder="teacher@school.edu, principal@school.edu" />
+                <div class="hint">Useful if teachers email from personal accounts.</div>
+            </div>
+            <button class="onboarding-btn" id="obSaveBtn" onclick="saveOnboarding()">Save &amp; Start Syncing →</button>
+            <span class="skip-link" onclick="skipOnboarding()">Skip for now — I'll configure this later</span>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
-            <h1>📘 Denali School Copilot</h1>
+            <h1>📘 School Copilot</h1>
             <p>Ask questions about school events, announcements, and activities</p>
+            <div class="user-badge" id="userBadge">
+                <img class="user-avatar" id="userAvatar" src="" alt="" />
+                <span class="user-name" id="userName"></span>
+                <button class="logout-btn" onclick="logout()">Sign out</button>
+            </div>
         </div>
 
         <div class="tabs">
@@ -749,7 +910,7 @@
         <div class="tab-content active" id="chatTab">
         <div class="chat-container" id="chatContainer">
             <div class="empty-state">
-                <h3>Welcome to Denali School Copilot!</h3>
+                <h3>Welcome to School Copilot!</h3>
                 <p>Ask me anything about school events, field trips, announcements, and more.</p>
                 <div class="example-questions">
 <div class="example-question" onclick="askQuestion('What events are happening at school this week?')">What events are happening this week?</div>
@@ -782,7 +943,7 @@
                 </button>
                 <textarea 
                     id="questionInput" 
-                    placeholder="Ask a question about Denali's school..."
+                    placeholder="Ask a question about your child's school..."
                     rows="1"
                     onkeydown="handleKeyDown(event)"
                 ></textarea>
@@ -962,7 +1123,7 @@
                 voiceButton.classList.remove('recording');
                 voiceStatus.textContent = '';
                 voiceStatus.classList.remove('recording');
-                questionInput.placeholder = 'Ask a question about Denali\'s school...';
+                questionInput.placeholder = 'Ask a question about your child\'s school...';
             };
         } else {
             // Browser doesn't support speech recognition
@@ -2023,6 +2184,116 @@
                 `;
             }
         }
+
+        // ── Auth + Onboarding ─────────────────────────────────────────────
+
+        let currentUser = null;
+
+        async function checkAuthStatus() {
+            try {
+                const resp = await fetch('/auth/me');
+                const data = await resp.json();
+                if (!data.authenticated) {
+                    showLoginScreen();
+                    return;
+                }
+                currentUser = data;
+                showUserBadge(data);
+                if (!data.onboarding_complete) {
+                    showOnboarding(data);
+                }
+            } catch (e) {
+                // If the /auth/me endpoint doesn't exist yet (single-user mode), just proceed
+                console.debug('Auth check skipped (single-user mode)');
+            }
+        }
+
+        function showLoginScreen() {
+            document.getElementById('authOverlay').classList.add('visible');
+        }
+
+        function showOnboarding(user) {
+            if (user.child_name && user.child_name !== 'your child') {
+                document.getElementById('ob_childName').value = user.child_name;
+            }
+            if (user.school_name && user.school_name !== 'school') {
+                document.getElementById('ob_schoolName').value = user.school_name;
+            }
+            document.getElementById('onboardingOverlay').classList.add('visible');
+        }
+
+        function showUserBadge(user) {
+            const badge = document.getElementById('userBadge');
+            badge.classList.add('visible');
+            document.getElementById('userName').textContent = user.name || user.email;
+            const avatar = document.getElementById('userAvatar');
+            if (user.picture) {
+                avatar.src = user.picture;
+                avatar.style.display = 'block';
+            } else {
+                avatar.style.display = 'none';
+            }
+        }
+
+        async function saveOnboarding() {
+            const btn = document.getElementById('obSaveBtn');
+            const domains = document.getElementById('ob_domains').value.trim();
+            const senders = document.getElementById('ob_senders').value.trim();
+            const childName = document.getElementById('ob_childName').value.trim();
+            const schoolName = document.getElementById('ob_schoolName').value.trim();
+
+            if (!domains && !senders) {
+                alert('Please enter at least one school email domain or sender address.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            try {
+                const resp = await fetch('/onboarding/setup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        school_domains: domains,
+                        school_senders: senders,
+                        child_name: childName || null,
+                        school_name: schoolName || null,
+                    }),
+                });
+                if (resp.ok) {
+                    // Trigger first sync
+                    await fetch('/onboarding/trigger-first-sync', { method: 'POST' });
+                    document.getElementById('onboardingOverlay').classList.remove('visible');
+                    // Update the welcome message placeholder
+                    const input = document.getElementById('questionInput');
+                    if (input && childName) {
+                        input.placeholder = `Ask a question about ${childName}'s school...`;
+                    }
+                } else {
+                    const err = await resp.json();
+                    alert(err.detail || 'Setup failed. Please try again.');
+                    btn.disabled = false;
+                    btn.textContent = 'Save & Start Syncing →';
+                }
+            } catch (e) {
+                alert('Network error. Please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Save & Start Syncing →';
+            }
+        }
+
+        function skipOnboarding() {
+            document.getElementById('onboardingOverlay').classList.remove('visible');
+        }
+
+        async function logout() {
+            await fetch('/auth/logout', { method: 'POST' });
+            location.reload();
+        }
+
+        // Run auth check on page load
+        document.addEventListener('DOMContentLoaded', checkAuthStatus);
     </script>
 </body>
 </html>

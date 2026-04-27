@@ -46,7 +46,7 @@ def ask_school_question(question: str, store_name: str, use_cache: bool = True) 
     tomorrow_str = tomorrow_date.strftime("%A, %B %d, %Y")
     
     # System prompt with current date context
-    system_instruction = f"""You are a school assistant for a busy parent.
+    system_instruction = f"""You are a school assistant for a busy parent managing communications for {config.CHILD_NAME} at {config.SCHOOL_NAME}.
 
 IMPORTANT: Today's date is {current_date_str} (Week {current_week}).
 
@@ -128,7 +128,10 @@ When mentioning dates, always include the full date (e.g., "Thursday, October 24
         optimized_base = get_optimized_prompt_base(question)
         
         # Create query text with explicit search instructions (enhanced with learning)
-        query_text = f"""You are searching through a consolidated file containing ALL school emails and announcements for Denali.
+        child_name = config.CHILD_NAME
+        school_name = config.SCHOOL_NAME
+
+        query_text = f"""You are searching through a consolidated file containing ALL school emails and announcements for {child_name} at {school_name}.
 
 IMPORTANT CONTEXT: Today is {current_date_str}.
 
@@ -139,9 +142,9 @@ OPTIMIZED INSTRUCTIONS (based on learned patterns): {optimized_base}
 SEARCH INSTRUCTIONS - READ CAREFULLY:
 1. This file contains MULTIPLE emails organized by date. You MUST search through ALL of them.
 2. The file structure is: "## Email: [DATE] - [SUBJECT]" followed by email content.
-3. When searching for a person (e.g., "Ms. Lobeda", "Lobita", "Miss Lobeda"):
+3. When searching for a person (e.g., a teacher name):
    - Search for emails WHERE the sender is that person (look for "**From:**" lines)
-   - These names all refer to the same teacher: Lobeda, Lobita, Ms. Lobeda, Miss Lobeda, Grace Lobeda
+   - Try name variations (e.g., "Ms. Smith", "Miss Smith", "J. Smith") when searching
 4. When searching for a topic (e.g., "birthday policy", "dress code"):
    - Read through ALL emails that mention that topic
    - Look for complete policy information, not just brief mentions
@@ -169,7 +172,7 @@ RESPONSE FORMATTING REQUIREMENTS:
 - Make the response scannable and action-oriented
 - Highlight requirements with ⚠️ and allowed items with ✅
 
-Now search the file and answer: {question}"""
+Now search the file and answer the following question about {child_name}'s school: {question}"""
         
         # Create content parts with file references
         parts = [types.Part.from_text(text=query_text)]
