@@ -679,13 +679,17 @@ async def startup_event():
     except Exception as e:
         logger.warning(f"Could not initialize database: {e}")
 
-    # Register auth + onboarding + billing routers
+    # Register auth + onboarding + billing + SMS + email inbound routers
     try:
         from app.onboarding import router as onboarding_router
         from app.billing import router as billing_router
+        from app.sms_handler import router as sms_router
+        from app.email_inbound import router as email_inbound_router
         app.include_router(onboarding_router)
         app.include_router(billing_router)
-        logger.info("Onboarding + billing routes registered")
+        app.include_router(sms_router)
+        app.include_router(email_inbound_router)
+        logger.info("Onboarding + billing + SMS + email inbound routes registered")
     except Exception as e:
         logger.warning(f"Could not register feature routes: {e}")
 

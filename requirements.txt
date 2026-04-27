@@ -23,3 +23,6 @@ aiosqlite==0.20.0
 # Phase 3: Payments
 stripe==11.3.0
 
+# Feature A: SMS via Twilio
+twilio==9.3.7
+

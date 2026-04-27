@@ -45,6 +45,9 @@ class User(Base):
     # Setup state
     onboarding_complete = Column(Boolean, default=False)
 
+    # SMS access
+    phone_number = Column(String, unique=True)       # E.164 format, e.g. +15551234567
+
 
 class UserSchool(Base):
     """School connection for a user — email domains and senders to ingest."""
@@ -57,6 +60,7 @@ class UserSchool(Base):
     gmail_token_path = Column(String)                # path to per-user token file
     calendar_token_path = Column(String)
     gemini_store_name = Column(String)               # per-user Gemini file store
+    forwarding_address = Column(String, unique=True) # inbound email address for non-Gmail
     created_at = Column(DateTime, default=datetime.utcnow)
     last_ingested_at = Column(DateTime)
 

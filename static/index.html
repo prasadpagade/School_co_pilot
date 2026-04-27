@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="School Copilot">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
     <title>School Copilot</title>
     <style>
         * {
@@ -856,36 +861,82 @@
         </div>
     </div>
 
+    <!-- PWA install banner (shown on mobile when app is not installed) -->
+    <div id="pwaInstallBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:12px 16px;z-index:9999;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -2px 12px rgba(0,0,0,0.2);">
+        <div style="font-size:14px;line-height:1.4;">
+            <strong>Add to Home Screen</strong><br>
+            <span style="opacity:0.9;font-size:12px;">Use School Copilot like a native app</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+            <button id="pwaInstallBtn" onclick="installPWA()" style="background:#fff;color:#667eea;border:none;border-radius:20px;padding:8px 16px;font-weight:600;font-size:13px;cursor:pointer;">Install</button>
+            <button onclick="document.getElementById('pwaInstallBanner').style.display='none'" style="background:rgba(255,255,255,0.2);color:#fff;border:none;border-radius:20px;padding:8px 12px;font-size:13px;cursor:pointer;">✕</button>
+        </div>
+    </div>
+
     <!-- Onboarding wizard overlay -->
     <div class="onboarding-overlay" id="onboardingOverlay">
         <div class="onboarding-card">
-            <div class="step-progress">
-                <div class="step-dot done" id="sdot1"></div>
-                <div class="step-dot active" id="sdot2"></div>
-                <div class="step-dot" id="sdot3"></div>
+            <!-- Step 1: School setup -->
+            <div id="obStep1">
+                <div class="step-progress">
+                    <div class="step-dot done" id="sdot1"></div>
+                    <div class="step-dot active" id="sdot2"></div>
+                    <div class="step-dot" id="sdot3"></div>
+                </div>
+                <h2>🏫 Set up your school</h2>
+                <p class="step-desc">Tell us which emails to watch — we'll scan your Gmail for school communications.</p>
+                <div class="form-group">
+                    <label>Child's name</label>
+                    <input type="text" id="ob_childName" placeholder="e.g. Emma" />
+                </div>
+                <div class="form-group">
+                    <label>School name</label>
+                    <input type="text" id="ob_schoolName" placeholder="e.g. Lincoln Elementary" />
+                </div>
+                <div class="form-group">
+                    <label>School email domain(s)</label>
+                    <input type="text" id="ob_domains" placeholder="@lincoln.edu, @pta.lincoln.edu" />
+                    <div class="hint">Emails from these domains will be ingested automatically.</div>
+                </div>
+                <div class="form-group">
+                    <label>Specific teacher / staff emails (optional)</label>
+                    <input type="text" id="ob_senders" placeholder="teacher@school.edu, principal@school.edu" />
+                    <div class="hint">Useful if teachers email from personal accounts.</div>
+                </div>
+                <button class="onboarding-btn" id="obSaveBtn" onclick="saveOnboarding()">Save &amp; Start Syncing →</button>
+                <span class="skip-link" onclick="skipOnboarding()">Skip for now — I'll configure this later</span>
             </div>
-            <h2>🏫 Set up your school</h2>
-            <p class="step-desc">Tell us which emails to watch — we'll scan your Gmail for school communications.</p>
-            <div class="form-group">
-                <label>Child's name</label>
-                <input type="text" id="ob_childName" placeholder="e.g. Emma" />
+
+            <!-- Step 2: SMS + forwarding address (shown after successful setup) -->
+            <div id="obStep2" style="display:none;">
+                <div class="step-progress">
+                    <div class="step-dot done"></div>
+                    <div class="step-dot done"></div>
+                    <div class="step-dot active"></div>
+                </div>
+                <h2>📱 Two power-ups</h2>
+                <p class="step-desc">Optional — you can set these up later from Settings.</p>
+
+                <div class="form-group" style="background:#f0fff4;border:1px solid #86efac;border-radius:10px;padding:14px;">
+                    <label style="color:#166534;font-weight:700;">📲 SMS — Text to ask questions</label>
+                    <div class="hint" style="color:#166534;margin-bottom:8px;">Register your phone number and text the School Copilot number any time.</div>
+                    <input type="tel" id="ob_phone" placeholder="+1 555 123 4567" style="font-size:16px;" />
+                    <button onclick="saveSMSPhone()" style="margin-top:8px;width:100%;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;" id="obPhoneBtn">Save phone number</button>
+                    <div id="obPhoneStatus" style="font-size:12px;margin-top:4px;"></div>
+                </div>
+
+                <div class="form-group" style="background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;padding:14px;margin-top:12px;">
+                    <label style="color:#1d4ed8;font-weight:700;">📧 Non-Gmail forwarding address</label>
+                    <div class="hint" style="color:#1d4ed8;margin-bottom:8px;">Use Outlook, Yahoo, or Apple Mail? Forward school emails to this address instead.</div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <code id="obForwardAddr" style="background:#dbeafe;padding:6px 10px;border-radius:6px;font-size:13px;flex:1;word-break:break-all;"></code>
+                        <button onclick="copyForwardAddr()" style="padding:6px 12px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;" id="obCopyBtn">Copy</button>
+                    </div>
+                    <div class="hint" style="margin-top:6px;">In Gmail/Outlook: Settings → Filters → Forward emails from @yourschool.edu here.</div>
+                </div>
+
+                <button class="onboarding-btn" style="margin-top:16px;" onclick="skipOnboarding()">All done — Let's go! →</button>
             </div>
-            <div class="form-group">
-                <label>School name</label>
-                <input type="text" id="ob_schoolName" placeholder="e.g. Lincoln Elementary" />
-            </div>
-            <div class="form-group">
-                <label>School email domain(s)</label>
-                <input type="text" id="ob_domains" placeholder="@lincoln.edu, @pta.lincoln.edu" />
-                <div class="hint">Emails from these domains will be ingested automatically.</div>
-            </div>
-            <div class="form-group">
-                <label>Specific teacher / staff emails (optional)</label>
-                <input type="text" id="ob_senders" placeholder="teacher@school.edu, principal@school.edu" />
-                <div class="hint">Useful if teachers email from personal accounts.</div>
-            </div>
-            <button class="onboarding-btn" id="obSaveBtn" onclick="saveOnboarding()">Save &amp; Start Syncing →</button>
-            <span class="skip-link" onclick="skipOnboarding()">Skip for now — I'll configure this later</span>
         </div>
     </div>
 
@@ -2262,13 +2313,19 @@
                     }),
                 });
                 if (resp.ok) {
-                    // Trigger first sync
-                    await fetch('/onboarding/trigger-first-sync', { method: 'POST' });
-                    document.getElementById('onboardingOverlay').classList.remove('visible');
-                    // Update the welcome message placeholder
+                    const data = await resp.json();
+                    // Trigger first sync in background
+                    fetch('/onboarding/trigger-first-sync', { method: 'POST' });
+                    // Update welcome message placeholder
                     const input = document.getElementById('questionInput');
                     if (input && childName) {
                         input.placeholder = `Ask a question about ${childName}'s school...`;
+                    }
+                    // Show step 2: SMS + forwarding address
+                    document.getElementById('obStep1').style.display = 'none';
+                    document.getElementById('obStep2').style.display = 'block';
+                    if (data.forwarding_address) {
+                        document.getElementById('obForwardAddr').textContent = data.forwarding_address;
                     }
                 } else {
                     const err = await resp.json();
@@ -2283,6 +2340,48 @@
             }
         }
 
+        async function saveSMSPhone() {
+            const phone = document.getElementById('ob_phone').value.trim();
+            if (!phone) return;
+            const btn = document.getElementById('obPhoneBtn');
+            const status = document.getElementById('obPhoneStatus');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            try {
+                const resp = await fetch('/sms/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone_number: phone }),
+                });
+                if (resp.ok) {
+                    status.style.color = '#16a34a';
+                    status.textContent = '✓ Phone registered! You can now text your school questions.';
+                    btn.textContent = 'Saved ✓';
+                } else {
+                    const err = await resp.json();
+                    status.style.color = '#dc2626';
+                    status.textContent = err.detail || 'Could not save phone number.';
+                    btn.disabled = false;
+                    btn.textContent = 'Save phone number';
+                }
+            } catch (e) {
+                status.style.color = '#dc2626';
+                status.textContent = 'Network error. Please try again.';
+                btn.disabled = false;
+                btn.textContent = 'Save phone number';
+            }
+        }
+
+        function copyForwardAddr() {
+            const addr = document.getElementById('obForwardAddr').textContent;
+            if (!addr) return;
+            navigator.clipboard.writeText(addr).then(() => {
+                const btn = document.getElementById('obCopyBtn');
+                btn.textContent = 'Copied!';
+                setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+            });
+        }
+
         function skipOnboarding() {
             document.getElementById('onboardingOverlay').classList.remove('visible');
         }
@@ -2294,6 +2393,44 @@
 
         // Run auth check on page load
         document.addEventListener('DOMContentLoaded', checkAuthStatus);
+
+        // ── PWA: Service Worker + Install Prompt ─────────────────────────────
+        let _pwaInstallEvent = null;
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+        }
+
+        // Android Chrome: capture the beforeinstallprompt event
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            _pwaInstallEvent = e;
+            document.getElementById('pwaInstallBanner').style.display = 'flex';
+        });
+
+        // iOS: show banner if running in Safari (not already installed as PWA)
+        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches
+            || window.navigator.standalone;
+        if (isIOS && !isInStandaloneMode) {
+            const banner = document.getElementById('pwaInstallBanner');
+            banner.style.display = 'flex';
+            // Replace button with iOS-specific instruction
+            document.getElementById('pwaInstallBtn').textContent = 'How to Install';
+            document.getElementById('pwaInstallBtn').onclick = () => {
+                alert('To install: tap the Share button (□↑) at the bottom of Safari, then tap "Add to Home Screen".');
+            };
+        }
+
+        function installPWA() {
+            if (_pwaInstallEvent) {
+                _pwaInstallEvent.prompt();
+                _pwaInstallEvent.userChoice.then(() => {
+                    _pwaInstallEvent = null;
+                    document.getElementById('pwaInstallBanner').style.display = 'none';
+                });
+            }
+        }
     </script>
 </body>
 </html>

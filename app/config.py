@@ -50,6 +50,15 @@ class Config:
         self.SENTRY_DSN = os.getenv("SENTRY_DSN", "")              # Sentry.io DSN (free tier)
         self.ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
+        # SMS (Twilio) — Feature A
+        self.TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
+        self.TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
+        self.TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER", "")  # E.164, e.g. +15551234567
+
+        # Email forwarding inbox (Postmark) — Feature B
+        self.POSTMARK_INBOUND_TOKEN = os.getenv("POSTMARK_INBOUND_TOKEN", "")
+        self.INBOUND_EMAIL_DOMAIN = os.getenv("INBOUND_EMAIL_DOMAIN", "mail.schoolcopilot.app")
+
     @staticmethod
     def _parse_list(value: str) -> List[str]:
         """Parse comma-separated string into list, stripping whitespace."""

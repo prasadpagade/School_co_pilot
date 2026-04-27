@@ -1,5 +1,6 @@
 """Onboarding wizard API endpoints — guides new parents through setup."""
 import logging
+import secrets
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
@@ -7,6 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.config import config
 from app.database import get_db
 from app.auth import get_current_user_id
 from app.user_store import (
@@ -31,6 +33,7 @@ class OnboardingStatusResponse(BaseModel):
     child_name: str
     school_name: str
     plan: str
+    forwarding_address: Optional[str] = None
 
 
 @router.get("/status", response_model=OnboardingStatusResponse)
@@ -59,6 +62,7 @@ async def onboarding_status(
         child_name=user.child_name or "your child",
         school_name=user.school_name or "school",
         plan=user.plan or "free",
+        forwarding_address=school.forwarding_address if school else None,
     )
 
 
@@ -80,7 +84,7 @@ async def onboarding_setup(
             detail="Provide at least one school email domain or specific sender address."
         )
 
-    save_user_school(
+    school = save_user_school(
         db=db,
         user_id=user_id,
         school_domains=request_body.school_domains.strip(),
@@ -89,9 +93,24 @@ async def onboarding_setup(
         school_name=request_body.school_name,
     )
 
+    # Generate a unique forwarding address if not yet assigned
+    if not school.forwarding_address:
+        token = secrets.token_hex(8)
+        school.forwarding_address = f"{token}@{config.INBOUND_EMAIL_DOMAIN}"
+        db.commit()
+        db.refresh(school)
+
     logger.info(f"Onboarding setup saved for user {user_id}")
 
-    return {"success": True, "message": "School configuration saved. Starting email sync..."}
+    return {
+        "success": True,
+        "message": "School configuration saved. Starting email sync...",
+        "forwarding_address": school.forwarding_address,
+        "forwarding_instructions": (
+            f"Forward school emails to {school.forwarding_address}. "
+            "In Gmail/Outlook: Settings → Filters → Forward emails from @yourschool.edu to this address."
+        ),
+    }
 
 
 @router.post("/trigger-first-sync")
